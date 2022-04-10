@@ -1,0 +1,2 @@
+# SeedlingTools-release
+SeedlingToolsのリリース用リポジトリです
