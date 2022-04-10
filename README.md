@@ -1,5 +1,6 @@
 # SeedlingTools-release
 SeedlingToolsのリリース用リポジトリです。
+This page is a release repository of Seedling Tools.
 
 ※日本語は英語の下の方に記載しています。
 
@@ -11,24 +12,10 @@ SeedlingToolsのリリース用リポジトリです。
 
 * Licenses are subject to change in the future. We will announce any changes on Twitter.
 
+This repository commiting is for owner. Please do not do to this repository.
+
 This is a pre-release and may have some issues.
 If you encounter any errors, please contact me.
-Twitter: @icakhi
-
-# Introduction
-**Welcome to my release page!**
-Thanks to everyone, today I can be the first release as icakhi (いかき).
-Sorry for my poor English, but please bear with me.
-
-I introduce a python script helper for all of comrade writing Maya python scripts.
-[Introduction movie](url)
-
-This Tool can use for these:
-- Easy to run from gui the python script file, that no matter where it is saved.
-- Test a portion of the functions or classes you have created.
-- Visualize bugs or some wrong writing with maya console.
-- Save and tryable several execution conditions.
-- Automatic generation of execution scripts from script file and addable to your Maya shelf.
 
 ### Installation for Windows Maya and how to open
 **1. Download repository from this page and extract zip file.**
@@ -51,6 +38,9 @@ This Tool can use for these:
 **6. Run that script.**
     It will convenient to register to the Shelf.
 
+### Contact
+Twitter: https://twitter.com/icakhi
+Youtube: https://www.youtube.com/channel/UCvxg8nPImDUZE1Ia7UevqZw/videos
 
 # !! 注意 !!
 **大切な内容を記載しているのでダウンロードの前に必ずお読みください。**
@@ -85,3 +75,6 @@ Twitter: @icakhi
 **6. スクリプトを実行します。**
     シェルフへ登録しておくと次回以降の起動が楽なため便利です。
 
+### コンタクト
+Twitter: https://twitter.com/icakhi
+Youtube: https://www.youtube.com/channel/UCvxg8nPImDUZE1Ia7UevqZw/videos
