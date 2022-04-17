@@ -1,7 +1,7 @@
 # -*- coding: utf_8 -*-
 
 from __future__ import absolute_import
-from __future__ import unicode_literals
+# from __future__ import unicode_literals
 from __future__ import division
 from __future__ import print_function
 
@@ -39,7 +39,7 @@ class PrinterCanWork:
     def __init__(self, text):
         self.text = ''
 
-        if self.__is_unicode(text):
+        if self.__is_str(text):
             self.text = text
 
         else:
@@ -55,18 +55,18 @@ class PrinterCanWork:
     # (設定は初期化なしで固定されています。要望があれば切り替えを実装します)
     @classmethod
     def check_and_print(cls, text):
-        if isinstance(text, unicode):
+        if isinstance(text, str):
             print(text)
             return text
         else:
             return None
 
     # ローカル関数もツールで読み込むことができますが、直接実行はできないため注意してください。
-    def __is_unicode(self, text=''):
+    def __is_str(self, text=''):
         if not text:
-            return True if isinstance(self.text, unicode) else False
+            return True if isinstance(self.text, str) else False
         else:
-            return True if isinstance(text, unicode) else False
+            return True if isinstance(text, str) else False
 
 
 # ===============================================
@@ -90,7 +90,7 @@ class PathCheckerCanWork(dict):
         self.set_path(path)
 
     def set_path(self, path):
-        if not path or not isinstance(path, unicode):
+        if not path or not isinstance(path, str):
             return
         self.path = path
 

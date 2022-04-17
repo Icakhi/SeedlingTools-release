@@ -1,7 +1,7 @@
 # -*- coding: utf_8 -*-
 
 from __future__ import absolute_import
-from __future__ import unicode_literals
+# from __future__ import unicode_literals
 from __future__ import division
 from __future__ import print_function
 
@@ -35,8 +35,8 @@ def print_can_work_1(text):
     # 基本的にどんな処理でも動作する想定ですが、
     # 一部の例外はこの後の動作しない方のスクリプトで紹介します。
 
-    if not isinstance(text, unicode) and not isinstance(text, str):
-        cmds.error("Argument 'text' is not the type of string or unicode!!")
+    if not isinstance(text, str):
+        cmds.error("Argument 'text' is not the type of string!!")
 
     print(text)
 
@@ -70,12 +70,14 @@ def __print_cannot_work_2(text):
 
     # Python2ではエラー文に日本語を含むマルチバイト文字を含むとScriptRunner本体でエラーになるおそれがあります。
     # 可能な限りエラー文にはマルチバイト文字を含めないでください。
-    if not isinstance(text, unicode) and not isinstance(text, str):
-        cmds.error("入力された引数はunicode型とstring型どちらでもありません！！")
+    if not isinstance(text, str):
+        cmds.error("入力された引数はstring型ではありません！！")
 
-	# 関数内であればTabを含んでいても動作はしますが、スクリプトプレビュー(リストのダブルクリック)で表示されないおそれがあります。
+	# Tabをインデントに含むとエラーになります。エラー回避のためコメントアウトしています。
+    '''
 	print(text)
 	return text
+    '''
 
 
 # ===============================================

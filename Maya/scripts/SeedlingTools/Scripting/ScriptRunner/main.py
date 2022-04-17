@@ -24,12 +24,16 @@ from __future__ import unicode_literals
 from __future__ import division
 from __future__ import print_function
 
+import sys
+
 # import ScriptRunner.core as script_runner_core
 import SeedlingTools.Scripting.ScriptRunner.core as script_runner_core
 
 
 # ++++++++++++++++++++++++++++++++++++++++++++++++++
 def main():
+    if sys.version_info.major is 3:
+        from importlib import reload
     reload(script_runner_core)
 
     script_runner = script_runner_core.ScriptRunner()

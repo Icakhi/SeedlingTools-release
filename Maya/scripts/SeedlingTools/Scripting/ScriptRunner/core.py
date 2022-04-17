@@ -600,7 +600,10 @@ class ScriptRunner():
             print("\n[ScriptRunner] 実行中にエラーが発生しました:")
 
             try:
-                cmds.error(traceback.format_exc().decode('unicode_escape'))
+                if sys.version_info.major is 3:
+                    cmds.error(traceback.format_exc())
+                else:
+                    cmds.error(traceback.format_exc().decode('unicode_escape'))
             except ValueError:
                 cmds.error(
                     "\n[ScriptRunner] スクリプトのエラー表記には半角英数字のみしか使用しないでください。\n" + \
