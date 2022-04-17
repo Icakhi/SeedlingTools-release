@@ -1,0 +1,13 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<Settings><ScriptPath>パスの記入欄です。「参照」からPythonファイルを選択したり、手動入力もできます。</ScriptPath><IterateEnable>1</IterateEnable><IterateValueName>iterate_var</IterateValueName><IterateValue>range(5)</IterateValue><PreCommandEnable>1</PreCommandEnable><PreCommand># for文の記入もPythonと同じようにできます。 ↑↑↑
+
+# 事前処理の記入欄です。Pythonと全く同様に書けます
+# ← チェックを外すと実行されなくなり、記入欄を狭くできます
+
+cmds.polyCube()
+target_obj = cmds.ls(sl=True)[0]
+cmds.setAttr(target_obj + ".rotateX", iterate_var * 15)
+cmds.setAttr(target_obj + ".rotateZ", iterate_var * 35)
+cmds.setAttr(target_obj + ".translateY", iterate_var * 3)
+
+# ↓↓↓ 関数設定がなくても動作します ↓↓↓</PreCommand><ClassName /><ClassArgument>関数・クラス名の設定欄が空のときは引数設定は無視されます。引数設定もPythonと同様に記入できます。</ClassArgument><FunctionName /><FunctionArgument>↓ ぜひお試しあれ ↓</FunctionArgument></Settings>

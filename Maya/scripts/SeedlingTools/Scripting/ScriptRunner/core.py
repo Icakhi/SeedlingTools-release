@@ -136,9 +136,10 @@ class ScriptRunner():
 
         # ------------------------------
         cmds.rowColumnLayout(nc=2, adj=2)
-        cmds.checkBox("pre cmd", w=70)
-        cmds.textField('pre_command_text')
+        cmds.checkBox("pre cmd", w=70, cc=self.__pre_cmd_size_change)
+        cmds.scrollField('pre_command_text', tx='', h= 40)
 
+        cmds.setParent('..')
         cmds.setParent('..')
 
         cmds.text(l='', h=2, bgc=[0.2, 0.2, 0.2])
@@ -228,6 +229,17 @@ class ScriptRunner():
         self.__load_options(self.setting_file_path)
 
     # ========================================
+    def __pre_cmd_size_change(self, *args):
+        tgl = cmds.checkBox('pre_cmd', q=True, v=True)
+        max_size = 200
+        min_size = 20
+        this_size = cmds.scrollField('pre_command_text', q=True, nl=True) * 17 + 5
+        if tgl:
+            cmds.scrollField('pre_command_text', e=True, h=max_size if this_size >= max_size else this_size)
+        else:
+            cmds.scrollField('pre_command_text', e=True, h=min_size)
+
+    # ========================================
     def __load_options(self, setting_file_path, *args):
 
         if not os.path.exists(setting_file_path):
@@ -252,7 +264,8 @@ class ScriptRunner():
         cmds.checkBox('pre_cmd', e=True, v=int(pre_command_enable.text))
 
         pre_command_var = settings.find('PreCommand')
-        cmds.textField('pre_command_text', e=True, tx=pre_command_var.text)
+        cmds.scrollField('pre_command_text', e=True, tx=pre_command_var.text)
+        self.__pre_cmd_size_change()
 
         class_name = settings.find('ClassName')
         cmds.textField('class_name', e=True, tx=class_name.text)
@@ -291,7 +304,7 @@ class ScriptRunner():
         iterate_enable.text = str(int(cmds.checkBox('pre_cmd', q=True, v=True)))
 
         pre_command_var = et.SubElement(settings, 'PreCommand')
-        pre_command_var.text = cmds.textField('pre_command_text', q=True, tx=True)
+        pre_command_var.text = cmds.scrollField('pre_command_text', q=True, tx=True)
 
         class_name = et.SubElement(settings, 'ClassName')
         class_name.text = cmds.textField('class_name', q=True, tx=True)
@@ -343,14 +356,16 @@ class ScriptRunner():
         if not func_item:
             return
 
+        # 関数リストから必要な情報をグループ化
         func_info_re = \
-            re.search(r'^(\w+)?\s?\(?(.*?)\)?:\s(\w+)\s?\(?(self,?\s?|cls,?\s?)?(.*?)\)?$', func_item)
+            re.search(r'^(\w+)?\s*\(?(.*?)\)?:\s(\S+)\s*\(\s*(self,?\s*|cls,?\s*)?(.*?)\s*\)\s*$', func_item)
 
         cmds.textField('class_name', e=True, tx=func_info_re.group(1))
 
         if func_info_re.group(2):
+            class_arg_list = [a for a in self.func_class_dict[func_item]['init_func_args'].split(',') if not '*' in a]
             class_arg_text = ','.join(
-                [arg+'=' if not '=' in arg and not '*' in arg else arg for arg in self.func_class_dict[func_item]['init_func_args'].split(',')])
+                [a+'=' if not '=' in a else a for a in class_arg_list])
         else:
             class_arg_text = ''
         cmds.textField('class_arg', e=True, tx=class_arg_text)
@@ -358,8 +373,10 @@ class ScriptRunner():
         cmds.textField('function_name', e=True, tx=func_info_re.group(3))
 
         if func_info_re.group(5):
+            function_arg_list = [a for a in func_info_re.group(5).split(',') if not '*' in a]
+            function_arg_list = [a for a in func_info_re.group(5).split(',') if not '*' in a]
             function_arg_text = ','.join(
-                [arg+'=' if not '=' in arg and not '*' in arg else arg for arg in func_info_re.group(5).split(',')])
+                [a+'=' if not '=' in a and not '*' in a else a for a in function_arg_list])
         else:
             function_arg_text = ''
         cmds.textField('function_arg', e=True, tx=function_arg_text)
@@ -384,18 +401,8 @@ class ScriptRunner():
             mnb=False,
             mxb=False,
             rtf=True)
-        cmds.scrollLayout(bgc=[0.2, 0.2, 0.2])
-        cmds.rowColumnLayout(adj=2, nc=3)
-        cmds.text(l='', w=5)
-        cmds.columnLayout(adj=True)
-
-        cmds.text(l='', h=5)
-        cmds.text(l=func_info.get_script(), align='left')
-        cmds.text(l='', h=5)
-
-        cmds.setParent('..')
-        cmds.text(l='', w=5)
-
+        cmds.paneLayout('script_pv_pl')
+        cmds.scrollField('script_pv_sf', tx=func_info.get_script(), ed=False)
         cmds.showWindow(this_window)
 
     # ========================================
@@ -416,91 +423,111 @@ class ScriptRunner():
         self.class_arg = cmds.textField('class_arg', q=True, tx=True)
         self.function_arg = cmds.textField('function_arg', q=True, tx=True)
 
+        self.iterate_var_name = cmds.textField('iterate_var_name', q=True, tx=True)
+        self.iterate_var = cmds.textField('iterate_var', q=True, tx=True)
+
+        self.pre_command_var = cmds.scrollField('pre_command_text', q=True, tx=True)
+
         self.exec_cmd = ""
 
         # ------------------------------
         # ほかスクリプトを読み込んだ際に被らないようにインポート後のモジュール名を作成
-        # 例："(2つ親のフォルダ名_1つ親のフォルダ名_)スクリプト名"
-        module_dirname_list = self.module_path.lower().split('/')
-        module_root_name = ""
+        if not self.module_path:
+            if (self.function_name or self.class_name) and not self.pre_command_var:
+                cmds.error("スクリプト実行対象のパスが設定されていません。")
+                return
 
-        # ディレクトリ名にPythonのワイルドカードが含まれていた場合の対応
-        module_dirname_list = [re.sub(r'\W', '_', dn) for dn in module_dirname_list]
-
-        # ドライブ表記が含まれていたら以前の表記を除外
-        if ':' in module_dirname_list[-1]:
-            pass
-        elif ':' in module_dirname_list[-2]:
-            module_root_name = module_dirname_list[-1] + "_"
         else:
-            module_root_name = \
-                module_dirname_list[-2] + "_" + module_dirname_list[-1] + "_"
+            # 例："(2つ親のフォルダ名_1つ親のフォルダ名_)スクリプト名"
+            module_dirname_list = self.module_path.lower().split('/')
+            module_root_name = ""
 
-        self.imported_module_name = module_root_name + self.script_name
+            # ディレクトリ名にPythonのワイルドカードが含まれていた場合の対応
+            module_dirname_list = [re.sub(r'\W', '_', dn) for dn in module_dirname_list]
+
+            # ドライブ表記が含まれていたら以前の表記を除外
+            if ':' in module_dirname_list[-1]:
+                pass
+            elif ':' in module_dirname_list[-2]:
+                module_root_name = module_dirname_list[-1] + "_"
+            else:
+                module_root_name = \
+                    module_dirname_list[-2] + "_" + module_dirname_list[-1] + "_"
+
+            self.imported_module_name = module_root_name + self.script_name
+
+            # ------------------------------
+            # スクリプトパスとモジュール名の設定
+            self.module_name = self.script_name
+
+            is_sys_path_contains_module_path = False
+
+            for p in sys.path:
+                p = p.replace('\\', '/')
+
+                # Pythonパスとモジュールパスが完全一致かチェック
+                if p == self.module_path:
+                    is_sys_path_contains_module_path = True
+                    break
+
+                # Pythonパスとモジュールパスが部分一致かチェック
+                elif p in self.module_path:
+                    # 既存Pythonパスとの相対パスからモジュール名を作成
+                    self.module_name = "{0}.{1}".format(
+                        os.path.relpath(self.module_path, p).replace('\\', '.'),
+                        self.script_name)
+                    is_sys_path_contains_module_path = True
+                    break
+
+            # モジュールパスが既存Pythonパスと一致しなかった場合、追加
+            if not is_sys_path_contains_module_path:
+                sys.path.append(self.module_path)
+
+            # ------------------------------
+            # スクリプトのインポート処理
+            if sys.version_info.major is 3:
+                self.exec_cmd += "from importlib import reload;\n"
+            self.exec_cmd += "import {0} as {1};\nreload({1});".format(
+                self.module_name, self.imported_module_name)
 
         # ------------------------------
-        # スクリプトパスとモジュール名の設定
-        self.module_name = self.script_name
-
-        is_sys_path_contains_module_path = False
-
-        for p in sys.path:
-            p = p.replace('\\', '/')
-
-            # Pythonパスとモジュールパスが完全一致かチェック
-            if p == self.module_path:
-                is_sys_path_contains_module_path = True
-                break
-
-            # Pythonパスとモジュールパスが部分一致かチェック
-            elif p in self.module_path:
-                # 既存Pythonパスとの相対パスからモジュール名を作成
-                self.module_name = "{0}.{1}".format(
-                    os.path.relpath(self.module_path, p).replace('\\', '.'),
-                    self.script_name)
-                is_sys_path_contains_module_path = True
-                break
-
-        # モジュールパスが既存Pythonパスと一致しなかった場合、追加
-        if not is_sys_path_contains_module_path:
-            sys.path.append(self.module_path)
-
-        # ------------------------------
-        # スクリプトのインポート
+        # 実行用スクリプト本体の生成開始
         this_indent = ''
-        self.exec_cmd += "import {0} as {1};\nreload({1});".format(
-            self.module_name, self.imported_module_name)
 
         # ------------------------------
         # 繰り返し処理の設定
-        self.iterate_var_name = cmds.textField('iterate_var_name', q=True, tx=True)
-        self.iterate_var = cmds.textField('iterate_var', q=True, tx=True)
-
         if cmds.checkBox('for', q=True, v=True) and self.iterate_var:
             self.exec_cmd += "\n{2}for {0} in {1}:".format(
                 self.iterate_var_name,
                 self.iterate_var,
                 this_indent)
+
             this_indent += '    '
-            self.exec_cmd += "\n{0}print('{1}: ' + {1});".format(
+            self.exec_cmd += "\n{0}print('{1}: ' + str({1}));".format(
                 this_indent,
                 self.iterate_var_name)
 
-        self.pre_command_var = cmds.textField('pre_command_text', q=True, tx=True).replace(
+        # ------------------------------
+        # 実行前処理の設定
+        self.pre_command_var = self.pre_command_var.replace(
             '; ', ';\n' + this_indent).replace(';', ';\n' + this_indent)
 
         if cmds.checkBox('pre_cmd', q=True, v=True) and self.pre_command_var:
-            self.exec_cmd += "\n{0}{1}".format(this_indent, self.pre_command_var)
+            self.exec_cmd += \
+                "\n{0}{1}".format(
+                    this_indent,
+                    self.pre_command_var.replace('\n', '\n'+this_indent))
 
         # ------------------------------
         # 引数の設定
-        # arg1, arg2 のような記述使用可、式の使用も可
         this_class_arg = self.class_arg
         this_function_arg = self.function_arg
 
         # ------------------------------
+        # 関数を実行するスクリプトを作成
+
         # クラスがない関数、ベタ書きスクリプトを実行する場合
-        if not self.class_name:
+        if not self.class_name and self.function_name and self.imported_module_name:
             self.exec_cmd += \
                 "\n{3}result = {0}.{1}({2});".format(
                     self.imported_module_name,
@@ -508,9 +535,8 @@ class ScriptRunner():
                     this_function_arg,
                     this_indent)
 
-        # ------------------------------
         # クラスのインスタンス生成のみを実行する場合
-        elif not self.function_name:
+        elif not self.function_name and self.class_name and self.imported_module_name:
             self.exec_cmd += \
                 "\n{3}class_obj = {0}.{1}({2});".format(
                     self.imported_module_name,
@@ -518,9 +544,8 @@ class ScriptRunner():
                     this_class_arg,
                     this_indent)
 
-        # ------------------------------
         # クラスのある関数を実行する場合
-        else:
+        elif self.function_name and self.class_name and self.imported_module_name:
             self.exec_cmd += \
                 "\n{5}class_obj = {0}.{1}({2});\n{5}result = class_obj.{3}({4});".format(
                     self.imported_module_name,
@@ -531,28 +556,38 @@ class ScriptRunner():
                     this_indent)
 
         if not self.exec_cmd:
-            print("実行するコマンドが設定されていません")
+            print("実行するコマンドが設定されませんでした。")
             return
 
-        self.exec_cmd += "\n{0}print('result : ' + str(result));".format(
-            this_indent)
+        # ------------------------------
+        # 関数の返り値を表示する
+        if 'result = ' in self.exec_cmd:
+            self.exec_cmd += "\n{0}print('result : ' + str(result));".format(
+                this_indent)
 
+        # ------------------------------
+        # 関数の実行
         print("\n[ScriptRunner] 以下のスクリプトを実行します:\n" + self.exec_cmd + '\n')
 
         try:
             exec(self.exec_cmd)
             cmds.button('run_script', e=True, bgc=[0.6, 0.9, 0.7])
-            self.__add_run_history([0.6, 0.9, 0.7], self.imported_module_name+'.'+self.class_name+'.'+self.function_name)
+            self.__add_run_history([0.6, 0.9, 0.7], str(self.imported_module_name)+'.'+self.class_name+'.'+self.function_name)
             print("[ScriptRunner] 実行が正常に完了しました\n")
 
         except BaseException:
             cmds.button('run_script', e=True, bgc=[0.9, 0.6, 0.7])
-            self.__add_run_history([0.9, 0.6, 0.7], self.imported_module_name+'.'+self.class_name+'.'+self.function_name)
+            self.__add_run_history([0.9, 0.6, 0.7], str(self.imported_module_name)+'.'+self.class_name+'.'+self.function_name)
             print("\n[ScriptRunner] 実行中にエラーが発生しました:")
+
             try:
                 cmds.error(traceback.format_exc().decode('unicode_escape'))
             except ValueError:
-                cmds.error("\n[ScriptRunner] スクリプトのエラー表記に日本語を含めないでください。\n")
+                cmds.error(
+                    "\n[ScriptRunner] スクリプトのエラー表記には半角英数字のみしか使用しないでください。\n" + \
+                    "エラーの詳細は以下のGithubページをご確認ください。\n" + \
+                    "https://github.com/Icakhi/SeedlingTools-release\n"
+                )
 
     # ========================================
     def __add_run_history(self, button_color, message=''):
@@ -582,6 +617,10 @@ class ScriptRunner():
         """
 
         self.script_path = cmds.textField('script_path', q=True, tx=True).replace('\\', '/')
+        env_re = r'\%(\w+)\%'
+        self.script_path = '/'.join(
+            [os.environ.get(re.search(env_re, d).group(1)) if re.search(env_re, d) else d for d in self.script_path.split('/')]).replace('\\', '/')
+        # cmds.textField('script_path', e=True, tx=self.script_path)
 
         if not self.script_path:
             return
@@ -622,6 +661,13 @@ class ScriptRunner():
         current_depth = 0
         indent_count = 0
 
+        decorate_line = ''
+        last_lines = []
+        is_classmethod = False
+
+        is_into_triple_q = False
+        is_into_triple_dq = False
+
         func_info = None
         init_args = ''
 
@@ -632,10 +678,35 @@ class ScriptRunner():
         for line in script_string.split(u'\n'):
 
             # ------------------------------
+            # トリプルクォートのある行の処理
+            # トリプルクォートの行内は実行可能な処理を記述できない
+            if '"""' in line or "'''" in line:
+                tdq_line = line.split('"""')
+                for tdq_count in range(len(tdq_line)-1):
+                    if '#' in tdq_line[tdq_count]: continue
+                    if is_into_triple_dq:
+                        is_into_triple_dq = False
+                    else:
+                        is_into_triple_dq = True
+
+                tq_line = line.split("'''")
+                for tq_count in range(len(tq_line)-1):
+                    if '#' in tq_line[tq_count]: continue
+                    if is_into_triple_q:
+                        is_into_triple_q = False
+                    else:
+                        is_into_triple_q = True
+
+            # ------------------------------
+            # トリプルクォート内だった場合の行の処理
+            if is_into_triple_q or is_into_triple_dq:
+                pass
+
+            # ------------------------------
             # クラスを宣言している行の処理
-            if 'class ' in line:
+            elif line.replace(' ', '').startswith('class'):
                 class_re = \
-                    re.search(r'(\s*)class\s(((\w)+)\s?\(?.*?\)?)\s?:', line)
+                    re.search(r'(\s*)class\s*(((\w)+)\s*\(?.*?\)?)\s*:', line)
 
                 if not class_re:
                     class_re = re.search(r'class\s((\w)+)\s?:', line)
@@ -661,22 +732,50 @@ class ScriptRunner():
                     else:
                         this_class = class_re.group(3)
 
+                continue
+
+            # ------------------------------
+            # デコレータの処理
+            elif '@' in line:
+                decorate_re = re.search(r'\s*@\s*(\w+)', line)
+                if not decorate_re:
+                    continue
+
+                # classmethodの場合
+                if 'classmethod' in decorate_re.group(1):
+                    is_classmethod = True
+                # その他の場合は考慮しない、必要があれば追記
+
+                decorate_line = line
+
+                continue
+
             # ------------------------------
             # 関数を宣言している行の処理
-            elif 'def ' in line:
+            elif line.replace(' ', '').startswith('def'):
+                # スクリプト情報の生成
                 func_info = FuncInfo()
+                last_lines = []
+
+                if is_classmethod:
+                    func_info.append_script_line(decorate_line)
                 func_info.append_script_line(line)
+
                 if indent_count and current_depth:
                     func_info.set_base_indent(' ' * indent_count * current_depth)
 
+                # 関数情報の読み込み
                 func_re = \
-                    re.search(r'(\s*)def\s((\w)+\s?\(?(.*?)\)?)\s?:', line)
+                    re.search(r'(\s*)def\s+((\w)+\s*\(?(.*?)\)?)\s*:\s*$', line)
 
-                if not func_re:
-                    func_re = re.search(r'def\s((\w)+)\s?:', line)
-                    if not func_re: continue
+                if not func_re: continue
 
-                special_func_re = re.search(r'__(\S*)__', func_re.group(2))
+                func = func_re.group(2)
+                arg_re_str = r'^\s*(.*?)\s*(:\s*(\w+))?\s*\)?\s*$'
+                arg = ', '.join([re.search(arg_re_str, a).group(1) if re.search(arg_re_str, a) else a for a in func.split('(')[1].split(')')[0].split(',')])
+                func = func.split('(')[0].replace(' ', '') + '(' + arg + ')' if arg else func
+
+                special_func_re = re.search(r'__(\S*)__', func)
                 if special_func_re:
                     if special_func_re.group(1) == 'init':
                         init_args = re.search(r'((self,?\s?)|(cls,?\s?))?(.*)', func_re.group(4)).group(4)
@@ -698,19 +797,51 @@ class ScriptRunner():
                         parent_class_list.pop()
 
                 if not func_re.group(1):
-                    self.func_class_dict[': ' + func_re.group(2)] = func_info
+                    self.func_class_dict[': ' + func] = func_info
                     continue
 
-                if func_info['init_func_args']:
-                    self.func_class_dict[this_class + '(' + func_info['init_func_args'] + '): ' + func_re.group(2)] = func_info
+                # クラスのインスタンス化が必要な関数
+                if func_info['init_func_args'] and not is_classmethod:
+                    self.func_class_dict[this_class + '(' + func_info['init_func_args'] + '): ' + func] = func_info
+
+                # クラスのインスタンス化が不要な関数
+                elif is_classmethod:
+                    self.func_class_dict[': ' + this_class + '.' + func] = func_info
+                    is_classmethod = False
+
+                # その他の関数
                 else:
-                    self.func_class_dict[this_class + ': ' + func_re.group(2)] = func_info
+                    self.func_class_dict[this_class + ': ' + func] = func_info
+
+                continue
 
             # ------------------------------
-            # クラスも関数も宣言していない行
-            else:
-                if func_info and not re.search(r'(\s*)(.*)', line).group(2).startswith('#'):
-                    func_info.append_script_line(line)
+            # クラスも関数も宣言されていない行
+            t_indent_re = re.search(r'^(\s*)(.*?)$', line)
+            t_indent_count = int(len(t_indent_re.group(1)))
+            t_line = t_indent_re.group(2)
+            if not t_indent_re.group(1) and t_line in t_line:
+
+                if not t_line.startswith(' ' * indent_count) or not t_line.startswith('"') or not t_line.startswith("'") or not t_line.startswith('#'):
+                    func_info = None
+
+                last_lines = []
+                continue
+
+            if func_info and func_info.is_second_line():
+                if not indent_count:
+                    indent_count = t_indent_count
+
+            if t_indent_count >= indent_count * (current_depth + 1) and func_info:
+                if last_lines:
+                    for this_line in last_lines:
+                        func_info.append_script_line(this_line)
+                    last_lines = []
+
+                func_info.append_script_line(line)
+
+            elif func_info:
+                last_lines.append(line)
 
     # ========================================
     def __refresh_script_list(self):
@@ -767,10 +898,16 @@ class FuncInfo(dict):
         if not indent_str and self['base_indent']:
             indent_str = self['base_indent']
 
+        self.append_script_line('')
+
         if len(indent_str) > 0:
             return '+' * 50 + '\n' + '\n'.join([re.search(r'^(' + indent_str + r')?(.*)', l).group(2) for l in self['script_lines']]) + '+' * 50 + '\n'
         else:
             return '+' * 50 + '\n' + '\n'.join(self['script_lines']) + '+' * 50 + '\n'
+
+    # ========================================
+    def is_second_line(self):
+        return len(self['script_lines']) == 2
 
     # ========================================
     def set_init_func_args(self, func_args):

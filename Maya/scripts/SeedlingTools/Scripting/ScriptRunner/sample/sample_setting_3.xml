@@ -1,0 +1,4 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<Settings><ScriptPath>%USERPROFILE%/Documents/maya/scripts/SeedlingTools/Scripting/ScriptRunner/sample/sample_classes.py</ScriptPath><IterateEnable>0</IterateEnable><IterateValueName>iterate_var</IterateValueName><IterateValue /><PreCommandEnable>1</PreCommandEnable><PreCommand># 実行したいクラス内関数を選択して実行できます。
+# 初期化の引数の指定や、
+# 関数実行の引数は下の入力欄に入力してください</PreCommand><ClassName>PathCheckerCanWork</ClassName><ClassArgument>path=r'D:\\'</ClassArgument><FunctionName>run_check</FunctionName><FunctionArgument /></Settings>

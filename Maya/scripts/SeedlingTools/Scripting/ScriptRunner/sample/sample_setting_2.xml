@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='UTF-8'?>
+
+<!--
+    この設定は、ScriptRunnerのツールUIへの記入サンプルです。
+
+    ScriptRunnerフォルダに「.settings」フォルダを作成し、
+    その中に「script_runner_setting.xml」という名前で上書き保存します。
+    ※元のサンプルファイルは残して、必ずコピーしてください！
+
+    MayaでScriptRunnerを起動すると、サンプルが表示されます。
+ -->
+
+<Settings><ScriptPath>%USERPROFILE%/Documents/maya/scripts/SeedlingTools/Scripting/ScriptRunner/sample/sample_functions.py</ScriptPath><IterateEnable>0</IterateEnable><IterateValueName>iterate_var</IterateValueName><IterateValue /><PreCommandEnable>1</PreCommandEnable><PreCommand># ↑↑↑ 上の欄から実行していみたい関数をクリックすると、下の設定欄に自動入力されます。
+#     ダブルクリックで、関数の内容をプレビューできます。</PreCommand><ClassName /><ClassArgument># 関数の引数 (func_arg欄) の"text"に渡した文章が関数 (function欄) で処理されます。</ClassArgument><FunctionName>print_can_work_1</FunctionName><FunctionArgument>text="This is the test!"</FunctionArgument></Settings>
