@@ -600,10 +600,10 @@ class ScriptRunner():
             print("\n[ScriptRunner] 実行中にエラーが発生しました:")
 
             try:
-                if sys.version_info.major is 3:
-                    cmds.error(traceback.format_exc())
-                else:
+                try:
                     cmds.error(traceback.format_exc().decode('unicode_escape'))
+                except:
+                    cmds.error(traceback.format_exc())
             except ValueError:
                 cmds.error(
                     "\n[ScriptRunner] スクリプトのエラー表記には半角英数字のみしか使用しないでください。\n" + \
@@ -747,6 +747,8 @@ class ScriptRunner():
                         last_current_depth = current_depth
                         current_depth = int(len(class_re.group(1)) / indent_count) if len(class_re.group(1)) else 0
                         for i in range(last_current_depth-current_depth):
+                            if not parent_class_list:
+                                continue
                             parent_class_list.pop()
 
                     if parent_class_list:
@@ -783,9 +785,6 @@ class ScriptRunner():
                     func_info.append_script_line(decorate_line)
                 func_info.append_script_line(line)
 
-                if indent_count and current_depth:
-                    func_info.set_base_indent(' ' * indent_count * current_depth)
-
                 # 関数情報の読み込み
                 func_re = \
                     re.search(r'(\s*)def\s+((\w)+\s*\(?(.*?)\)?)\s*:\s*$', line)
@@ -816,7 +815,12 @@ class ScriptRunner():
                     last_current_depth = current_depth
                     current_depth = int(len(func_re.group(1)) / indent_count) if len(func_re.group(1)) else 0
                     for i in range(last_current_depth-current_depth):
+                        if not parent_class_list:
+                            continue
                         parent_class_list.pop()
+
+                if indent_count and current_depth:
+                    func_info.set_base_indent(' ' * indent_count * current_depth)
 
                 if not func_re.group(1):
                     self.func_class_dict[': ' + func] = func_info
@@ -842,7 +846,7 @@ class ScriptRunner():
             t_indent_re = re.search(r'^(\s*)(.*?)$', line)
             t_indent_count = int(len(t_indent_re.group(1)))
             t_line = t_indent_re.group(2)
-            if not t_indent_re.group(1) and t_line in t_line:
+            if not t_indent_re.group(1) and t_line:
 
                 if not t_line.startswith(' ' * indent_count) or not t_line.startswith('"') or not t_line.startswith("'") or not t_line.startswith('#'):
                     func_info = None

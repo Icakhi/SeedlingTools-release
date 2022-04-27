@@ -33,8 +33,10 @@ import SeedlingTools.Scripting.ScriptRunner.core as script_runner_core
 # ++++++++++++++++++++++++++++++++++++++++++++++++++
 def main():
     if sys.version_info.major is 3:
-        from importlib import reload
-    reload(script_runner_core)
+        import importlib
+        importlib.reload(script_runner_core)
+    else:
+        reload(script_runner_core)
 
     script_runner = script_runner_core.ScriptRunner()
     script_runner.create_ui()
